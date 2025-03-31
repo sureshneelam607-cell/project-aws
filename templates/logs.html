@@ -1,0 +1,559 @@
+{% extends 'layout.html' %}
+
+{% block title %}Traffic Logs{% endblock %}
+
+{% block header %}Traffic Logs{% endblock %}
+
+{% block header_buttons %}
+<div class="btn-group me-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-logs">
+        <i data-feather="refresh-cw"></i> Refresh
+    </button>
+</div>
+<div class="btn-group me-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+        <i data-feather="filter"></i> Filter
+    </button>
+    <ul class="dropdown-menu">
+        <li><h6 class="dropdown-header">Method</h6></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="GET">GET</a></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="POST">POST</a></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="PUT">PUT</a></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="DELETE">DELETE</a></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="HEAD">HEAD</a></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="OPTIONS">OPTIONS</a></li>
+        <li><a class="dropdown-item filter-method" href="#" data-method="CONNECT">CONNECT</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header">Status</h6></li>
+        <li><a class="dropdown-item filter-status" href="#" data-status="200">200 OK</a></li>
+        <li><a class="dropdown-item filter-status" href="#" data-status="404">404 Not Found</a></li>
+        <li><a class="dropdown-item filter-status" href="#" data-status="500">500 Server Error</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><h6 class="dropdown-header">Vulnerabilities</h6></li>
+        <li><a class="dropdown-item filter-vuln" href="#" data-vuln="sql_injection">SQL Injection</a></li>
+        <li><a class="dropdown-item filter-vuln" href="#" data-vuln="xss">XSS</a></li>
+        <li><a class="dropdown-item filter-vuln" href="#" data-vuln="path_traversal">Path Traversal</a></li>
+        <li><a class="dropdown-item filter-vuln" href="#" data-vuln="command_injection">Command Injection</a></li>
+        <li><a class="dropdown-item filter-vuln" href="#" data-vuln="scanner_signatures">Scanner Signatures</a></li>
+    </ul>
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-sm btn-outline-danger" id="clear-filter">
+        <i data-feather="x"></i> Clear Filter
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="alert alert-info" id="filter-status" style="display: none;">
+            <i data-feather="filter"></i> 
+            <span id="filter-description">Showing all transactions</span>
+            <button type="button" class="btn-close float-end" id="close-filter-status"></button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Client</th>
+                                <th>Method</th>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Size</th>
+                                <th>Duration</th>
+                                <th>Vulnerabilities</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-logs">
+                            <tr>
+                                <td colspan="9" class="text-center">Loading transaction logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span id="showing-entries">Showing 0-0 of 0 entries</span>
+                    </div>
+                    <div>
+                        <nav>
+                            <ul class="pagination">
+                                <li class="page-item disabled" id="prev-page">
+                                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                                </li>
+                                <li class="page-item disabled" id="next-page">
+                                    <a class="page-link" href="#">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Detail Modal -->
+<div class="modal fade" id="transaction-detail-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title">Transaction Detail</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="transaction-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="overview-tab" data-bs-toggle="tab" href="#overview">Overview</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="request-tab" data-bs-toggle="tab" href="#request">Request</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="response-tab" data-bs-toggle="tab" href="#response">Response</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="vulnerabilities-tab" data-bs-toggle="tab" href="#vulnerabilities">Vulnerabilities</a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="transaction-content">
+                    <div class="tab-pane fade show active" id="overview">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>General Information</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr>
+                                        <th>Client</th>
+                                        <td id="detail-client"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Time</th>
+                                        <td id="detail-time"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Duration</th>
+                                        <td id="detail-duration"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Request Summary</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr>
+                                        <th>Method</th>
+                                        <td id="detail-method"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>URL</th>
+                                        <td id="detail-url"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Size</th>
+                                        <td id="detail-req-size"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6>Response Summary</h6>
+                                <table class="table table-dark table-sm">
+                                    <tr>
+                                        <th>Status</th>
+                                        <td id="detail-status"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Size</th>
+                                        <td id="detail-resp-size"></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Vulnerabilities</h6>
+                                <div id="detail-vulns">
+                                    <p class="text-muted">No vulnerabilities detected</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="request">
+                        <h6>Request Headers</h6>
+                        <div class="bg-dark p-2 mb-3 border rounded">
+                            <pre id="detail-req-headers" class="text-white mb-0"></pre>
+                        </div>
+                        
+                        <h6>Request Body</h6>
+                        <div class="bg-dark p-2 border rounded" style="max-height: 400px; overflow-y: auto;">
+                            <pre id="detail-req-body" class="text-white mb-0"></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="response">
+                        <h6>Response Headers</h6>
+                        <div class="bg-dark p-2 mb-3 border rounded">
+                            <pre id="detail-resp-headers" class="text-white mb-0"></pre>
+                        </div>
+                        
+                        <h6>Response Body</h6>
+                        <div class="bg-dark p-2 border rounded" style="max-height: 400px; overflow-y: auto;">
+                            <pre id="detail-resp-body" class="text-white mb-0"></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="vulnerabilities">
+                        <div id="detail-vulnerabilities-content">
+                            <p class="text-muted">No vulnerabilities detected in this transaction</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let currentPage = 0;
+    const PAGE_SIZE = 20;
+    let totalTransactions = 0;
+    let currentFilter = {
+        type: null,
+        value: null
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial load
+        loadTransactions();
+        
+        // Refresh button handler
+        document.getElementById('refresh-logs').addEventListener('click', function() {
+            loadTransactions();
+        });
+        
+        // Pagination handlers
+        document.getElementById('prev-page').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage > 0) {
+                currentPage--;
+                loadTransactions();
+            }
+        });
+        
+        document.getElementById('next-page').addEventListener('click', function(e) {
+            e.preventDefault();
+            if ((currentPage + 1) * PAGE_SIZE < totalTransactions) {
+                currentPage++;
+                loadTransactions();
+            }
+        });
+        
+        // Filter handlers
+        document.querySelectorAll('.filter-method').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const method = this.getAttribute('data-method');
+                applyFilter('method', method);
+            });
+        });
+        
+        document.querySelectorAll('.filter-status').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const status = this.getAttribute('data-status');
+                applyFilter('status', status);
+            });
+        });
+        
+        document.querySelectorAll('.filter-vuln').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const vuln = this.getAttribute('data-vuln');
+                applyFilter('vulnerability', vuln);
+            });
+        });
+        
+        // Clear filter
+        document.getElementById('clear-filter').addEventListener('click', function() {
+            clearFilter();
+        });
+        
+        document.getElementById('close-filter-status').addEventListener('click', function() {
+            document.getElementById('filter-status').style.display = 'none';
+        });
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadTransactions, 30000);
+    });
+    
+    function loadTransactions() {
+        const offset = currentPage * PAGE_SIZE;
+        let url = `/api/transactions?limit=${PAGE_SIZE}&offset=${offset}`;
+        
+        if (currentFilter.type && currentFilter.value) {
+            url += `&filter_type=${currentFilter.type}&filter_value=${currentFilter.value}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                updateTransactionTable(data.transactions);
+                totalTransactions = data.total;
+                updatePagination();
+            })
+            .catch(error => console.error('Error fetching transactions:', error));
+    }
+    
+    function updateTransactionTable(transactions) {
+        const tableBody = document.getElementById('transaction-logs');
+        
+        if (transactions.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="9" class="text-center">No transactions found</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        
+        transactions.forEach((tx, index) => {
+            const time = new Date(tx.timestamp * 1000).toLocaleString();
+            const client = tx.client_address;
+            const method = tx.request.method || 'Unknown';
+            const url = tx.request.url || 'Unknown';
+            const status = tx.response.status_code || '-';
+            const size = formatBytes(tx.response.size || 0);
+            const duration = (tx.duration * 1000).toFixed(2) + ' ms';
+            
+            // Count vulnerabilities
+            const vulnCount = tx.vulnerabilities.length;
+            const vulnBadge = vulnCount > 0 
+                ? `<span class="badge bg-danger">${vulnCount}</span>` 
+                : '<span class="badge bg-secondary">0</span>';
+            
+            html += `
+                <tr>
+                    <td>${time}</td>
+                    <td>${client}</td>
+                    <td>${method}</td>
+                    <td class="text-truncate" style="max-width: 200px;">${url}</td>
+                    <td>${status}</td>
+                    <td>${size}</td>
+                    <td>${duration}</td>
+                    <td>${vulnBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info view-transaction" data-index="${currentPage * PAGE_SIZE + index}">
+                            <i data-feather="eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tableBody.innerHTML = html;
+        
+        // Re-initialize feather icons
+        feather.replace();
+        
+        // Add event listeners to view buttons
+        document.querySelectorAll('.view-transaction').forEach(button => {
+            button.addEventListener('click', function() {
+                const index = parseInt(this.getAttribute('data-index'));
+                viewTransactionDetail(index);
+            });
+        });
+        
+        // Update showing entries text
+        const start = currentPage * PAGE_SIZE + 1;
+        const end = Math.min(start + transactions.length - 1, totalTransactions);
+        document.getElementById('showing-entries').textContent = 
+            `Showing ${start}-${end} of ${totalTransactions} entries`;
+    }
+    
+    function updatePagination() {
+        const prevPage = document.getElementById('prev-page');
+        const nextPage = document.getElementById('next-page');
+        
+        if (currentPage === 0) {
+            prevPage.classList.add('disabled');
+        } else {
+            prevPage.classList.remove('disabled');
+        }
+        
+        if ((currentPage + 1) * PAGE_SIZE >= totalTransactions) {
+            nextPage.classList.add('disabled');
+        } else {
+            nextPage.classList.remove('disabled');
+        }
+    }
+    
+    function applyFilter(type, value) {
+        currentFilter.type = type;
+        currentFilter.value = value;
+        currentPage = 0;
+        
+        // Show filter status
+        const filterStatus = document.getElementById('filter-status');
+        filterStatus.style.display = 'block';
+        
+        // Update filter description
+        let description;
+        switch (type) {
+            case 'method':
+                description = `Filtering by Method: ${value}`;
+                break;
+            case 'status':
+                description = `Filtering by Status: ${value}`;
+                break;
+            case 'vulnerability':
+                description = `Filtering by Vulnerability: ${formatVulnerabilityName(value)}`;
+                break;
+            default:
+                description = 'Custom filter applied';
+        }
+        
+        document.getElementById('filter-description').textContent = description;
+        
+        // Load transactions with filter
+        loadTransactions();
+    }
+    
+    function clearFilter() {
+        currentFilter.type = null;
+        currentFilter.value = null;
+        currentPage = 0;
+        
+        // Hide filter status
+        document.getElementById('filter-status').style.display = 'none';
+        
+        // Load all transactions
+        loadTransactions();
+    }
+    
+    function viewTransactionDetail(index) {
+        fetch(`/api/transaction/${index}`)
+            .then(response => response.json())
+            .then(tx => {
+                // Fill overview tab
+                document.getElementById('detail-client').textContent = tx.client_address;
+                document.getElementById('detail-time').textContent = new Date(tx.timestamp * 1000).toLocaleString();
+                document.getElementById('detail-duration').textContent = (tx.duration * 1000).toFixed(2) + ' ms';
+                document.getElementById('detail-method').textContent = tx.request.method || 'Unknown';
+                document.getElementById('detail-url').textContent = tx.request.url || 'Unknown';
+                document.getElementById('detail-req-size').textContent = formatBytes(tx.request.size || 0);
+                document.getElementById('detail-status').textContent = tx.response.status_code || '-';
+                document.getElementById('detail-resp-size').textContent = formatBytes(tx.response.size || 0);
+                
+                // Fill request tab
+                let reqHeaders = '';
+                for (const [name, value] of Object.entries(tx.request.headers || {})) {
+                    reqHeaders += `${name}: ${value}\n`;
+                }
+                document.getElementById('detail-req-headers').textContent = reqHeaders || 'No headers available';
+                
+                if (tx.request.raw_decoded) {
+                    document.getElementById('detail-req-body').textContent = tx.request.raw_decoded;
+                } else {
+                    document.getElementById('detail-req-body').textContent = 'No body available or binary data';
+                }
+                
+                // Fill response tab
+                let respHeaders = '';
+                for (const [name, value] of Object.entries(tx.response.headers || {})) {
+                    respHeaders += `${name}: ${value}\n`;
+                }
+                document.getElementById('detail-resp-headers').textContent = respHeaders || 'No headers available';
+                
+                if (tx.response.raw_decoded) {
+                    document.getElementById('detail-resp-body').textContent = tx.response.raw_decoded;
+                } else {
+                    document.getElementById('detail-resp-body').textContent = 'No body available or binary data';
+                }
+                
+                // Fill vulnerabilities tab
+                if (tx.vulnerabilities && tx.vulnerabilities.length > 0) {
+                    let vulnHtml = '<div class="list-group">';
+                    
+                    tx.vulnerabilities.forEach(vuln => {
+                        vulnHtml += `
+                            <div class="list-group-item bg-dark text-white border-danger">
+                                <h6 class="text-danger">${formatVulnerabilityName(vuln.type)}</h6>
+                                <div class="small">
+                                    <strong>Pattern:</strong> ${vuln.pattern}
+                                </div>
+                                <div class="small">
+                                    <strong>Matches:</strong> ${vuln.matches}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    vulnHtml += '</div>';
+                    document.getElementById('detail-vulnerabilities-content').innerHTML = vulnHtml;
+                    
+                    // Update overview vulnerabilities
+                    let overviewVulns = '<div class="list-group">';
+                    tx.vulnerabilities.forEach(vuln => {
+                        overviewVulns += `
+                            <div class="list-group-item bg-dark text-white border-danger p-2 mb-1">
+                                <span class="text-danger">${formatVulnerabilityName(vuln.type)}</span>
+                                <span class="badge bg-danger float-end">${vuln.matches}</span>
+                            </div>
+                        `;
+                    });
+                    overviewVulns += '</div>';
+                    document.getElementById('detail-vulns').innerHTML = overviewVulns;
+                } else {
+                    document.getElementById('detail-vulnerabilities-content').innerHTML = 
+                        '<p class="text-muted">No vulnerabilities detected in this transaction</p>';
+                    document.getElementById('detail-vulns').innerHTML = 
+                        '<p class="text-muted">No vulnerabilities detected</p>';
+                }
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('transaction-detail-modal'));
+                modal.show();
+            })
+            .catch(error => console.error('Error fetching transaction details:', error));
+    }
+    
+    function formatVulnerabilityName(vulnType) {
+        const names = {
+            'sql_injection': 'SQL Injection',
+            'xss': 'Cross-Site Scripting',
+            'path_traversal': 'Path Traversal',
+            'command_injection': 'Command Injection',
+            'lfi_rfi': 'Local/Remote File Inclusion',
+            'scanner_signatures': 'Scanner Signatures',
+            'nosql_injection': 'NoSQL Injection'
+        };
+        
+        return names[vulnType] || vulnType;
+    }
+    
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        
+        return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + units[i];
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,438 @@
+{% extends 'layout.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block header %}Proxy Settings{% endblock %}
+
+{% block header_buttons %}
+<div class="btn-group me-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-settings">
+        <i data-feather="refresh-cw"></i> Refresh
+    </button>
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-sm btn-outline-success" id="save-settings">
+        <i data-feather="save"></i> Save Changes
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div id="settings-alert" class="alert alert-success" style="display: none;">
+            <i data-feather="check-circle"></i> Settings saved successfully
+        </div>
+        <div id="settings-error" class="alert alert-danger" style="display: none;">
+            <i data-feather="alert-circle"></i> <span id="error-message">Failed to save settings</span>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i data-feather="server" class="text-info me-2"></i> Proxy Server Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="proxy-settings-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="proxy-host" class="form-label">Proxy Host</label>
+                            <input type="text" class="form-control" id="proxy-host" name="proxy.host" placeholder="0.0.0.0">
+                            <div class="form-text text-muted">Host address to bind the proxy server</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="proxy-port" class="form-label">Proxy Port</label>
+                            <input type="number" class="form-control" id="proxy-port" name="proxy.port" placeholder="8000">
+                            <div class="form-text text-muted">Port number to bind the proxy server</div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="buffer-size" class="form-label">Buffer Size</label>
+                            <input type="number" class="form-control" id="buffer-size" name="proxy.buffer_size" placeholder="8192">
+                            <div class="form-text text-muted">Socket buffer size in bytes</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="timeout" class="form-label">Timeout</label>
+                            <input type="number" class="form-control" id="timeout" name="proxy.timeout" placeholder="60">
+                            <div class="form-text text-muted">Socket timeout in seconds</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="max-connections" class="form-label">Max Connections</label>
+                            <input type="number" class="form-control" id="max-connections" name="proxy.max_connections" placeholder="100">
+                            <div class="form-text text-muted">Maximum number of concurrent connections</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i data-feather="shield" class="text-info me-2"></i> SSL Interception</h5>
+            </div>
+            <div class="card-body">
+                <form id="ssl-settings-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="intercept-ssl" name="ssl.intercept">
+                                <label class="form-check-label" for="intercept-ssl">Enable SSL/TLS Interception</label>
+                            </div>
+                            <div class="form-text text-muted">Intercept and decrypt HTTPS traffic (requires CA certificate)</div>
+                        </div>
+                    </div>
+                    <div id="ssl-settings" style="display: none;">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="ca-cert" class="form-label">CA Certificate Path</label>
+                                <input type="text" class="form-control" id="ca-cert" name="ssl.ca_cert" placeholder="ca/ca.crt">
+                                <div class="form-text text-muted">Path to CA certificate file</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="ca-key" class="form-label">CA Private Key Path</label>
+                                <input type="text" class="form-control" id="ca-key" name="ssl.ca_key" placeholder="ca/ca.key">
+                                <div class="form-text text-muted">Path to CA private key file</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="alert alert-warning">
+                                    <i data-feather="alert-triangle"></i> To use SSL interception, you need to generate a CA certificate and install it in your browser.
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-warning btn-sm" id="generate-ca">Generate CA Certificate</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i data-feather="globe" class="text-info me-2"></i> Web Interface Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="web-settings-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable-web" name="web_interface.enable" checked>
+                                <label class="form-check-label" for="enable-web">Enable Web Interface</label>
+                            </div>
+                            <div class="form-text text-muted">Enable or disable the web interface</div>
+                        </div>
+                    </div>
+                    <div id="web-settings">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="web-host" class="form-label">Web Host</label>
+                                <input type="text" class="form-control" id="web-host" name="web_interface.host" placeholder="0.0.0.0">
+                                <div class="form-text text-muted">Host address to bind the web interface</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="web-port" class="form-label">Web Port</label>
+                                <input type="number" class="form-control" id="web-port" name="web_interface.port" placeholder="5000">
+                                <div class="form-text text-muted">Port number to bind the web interface</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i data-feather="file-text" class="text-info me-2"></i> Logging Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="logging-settings-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="log-level" class="form-label">Log Level</label>
+                            <select class="form-select" id="log-level" name="logging.level">
+                                <option value="DEBUG">DEBUG</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="ERROR">ERROR</option>
+                                <option value="CRITICAL">CRITICAL</option>
+                            </select>
+                            <div class="form-text text-muted">Logging level for the application</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="log-file" class="form-label">Log File</label>
+                            <input type="text" class="form-control" id="log-file" name="logging.file" placeholder="naptyproxy.log">
+                            <div class="form-text text-muted">File to save logs</div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="max-log-entries" class="form-label">Max Log Entries</label>
+                            <input type="number" class="form-control" id="max-log-entries" name="logging.max_log_entries" placeholder="1000">
+                            <div class="form-text text-muted">Maximum number of transaction logs to keep in memory</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i data-feather="filter" class="text-info me-2"></i> Filter Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="filter-settings-form">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="ignored-hosts" class="form-label">Ignored Hosts</label>
+                            <textarea class="form-control" id="ignored-hosts" name="filters.ignored_hosts" rows="2" placeholder="One host per line"></textarea>
+                            <div class="form-text text-muted">Hosts to ignore (not intercept)</div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="ignored-extensions" class="form-label">Ignored Extensions</label>
+                            <textarea class="form-control" id="ignored-extensions" name="filters.ignored_extensions" rows="3" placeholder=".css,.js,.jpg,.png"></textarea>
+                            <div class="form-text text-muted">File extensions to ignore</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="ignored-content-types" class="form-label">Ignored Content Types</label>
+                            <textarea class="form-control" id="ignored-content-types" name="filters.ignored_content_types" rows="3" placeholder="image/,font/,application/javascript"></textarea>
+                            <div class="form-text text-muted">Content types to ignore</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Generate CA Modal -->
+<div class="modal fade" id="generate-ca-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate CA Certificate</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="generate-ca-form">
+                    <div class="mb-3">
+                        <label for="ca-name" class="form-label">CA Name</label>
+                        <input type="text" class="form-control" id="ca-name" value="NaptProxy CA">
+                        <div class="form-text text-muted">Name of the Certificate Authority</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ca-dir" class="form-label">CA Directory</label>
+                        <input type="text" class="form-control" id="ca-dir" value="ca">
+                        <div class="form-text text-muted">Directory to save the certificate and key</div>
+                    </div>
+                </form>
+                <div id="ca-result" class="alert alert-info" style="display: none;">
+                    <p id="ca-result-message"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="do-generate-ca">Generate</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load current settings
+        loadSettings();
+        
+        // Toggle SSL settings based on checkbox
+        document.getElementById('intercept-ssl').addEventListener('change', function() {
+            document.getElementById('ssl-settings').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Toggle web interface settings based on checkbox
+        document.getElementById('enable-web').addEventListener('change', function() {
+            document.getElementById('web-settings').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Save settings
+        document.getElementById('save-settings').addEventListener('click', function() {
+            saveSettings();
+        });
+        
+        // Refresh settings
+        document.getElementById('refresh-settings').addEventListener('click', function() {
+            loadSettings();
+        });
+        
+        // Generate CA certificate
+        document.getElementById('generate-ca').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('generate-ca-modal'));
+            modal.show();
+        });
+        
+        document.getElementById('do-generate-ca').addEventListener('click', function() {
+            generateCACertificate();
+        });
+    });
+    
+    function loadSettings() {
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                // Proxy settings
+                document.getElementById('proxy-host').value = config.proxy.host;
+                document.getElementById('proxy-port').value = config.proxy.port;
+                document.getElementById('buffer-size').value = config.proxy.buffer_size;
+                document.getElementById('timeout').value = config.proxy.timeout;
+                document.getElementById('max-connections').value = config.proxy.max_connections;
+                
+                // SSL settings
+                document.getElementById('intercept-ssl').checked = config.ssl.intercept;
+                document.getElementById('ca-cert').value = config.ssl.ca_cert;
+                document.getElementById('ca-key').value = config.ssl.ca_key;
+                document.getElementById('ssl-settings').style.display = config.ssl.intercept ? 'block' : 'none';
+                
+                // Web interface settings
+                document.getElementById('enable-web').checked = config.web_interface.enable;
+                document.getElementById('web-host').value = config.web_interface.host;
+                document.getElementById('web-port').value = config.web_interface.port;
+                document.getElementById('web-settings').style.display = config.web_interface.enable ? 'block' : 'none';
+                
+                // Logging settings
+                document.getElementById('log-level').value = config.logging.level;
+                document.getElementById('log-file').value = config.logging.file;
+                document.getElementById('max-log-entries').value = config.logging.max_log_entries;
+                
+                // Filter settings
+                document.getElementById('ignored-hosts').value = config.filters.ignored_hosts.join('\n');
+                document.getElementById('ignored-extensions').value = config.filters.ignored_extensions.join('\n');
+                document.getElementById('ignored-content-types').value = config.filters.ignored_content_types.join('\n');
+            })
+            .catch(error => {
+                console.error('Error loading settings:', error);
+                showError('Failed to load settings: ' + error.message);
+            });
+    }
+    
+    function saveSettings() {
+        const config = {
+            proxy: {
+                host: document.getElementById('proxy-host').value,
+                port: parseInt(document.getElementById('proxy-port').value),
+                buffer_size: parseInt(document.getElementById('buffer-size').value),
+                timeout: parseInt(document.getElementById('timeout').value),
+                max_connections: parseInt(document.getElementById('max-connections').value)
+            },
+            ssl: {
+                intercept: document.getElementById('intercept-ssl').checked,
+                ca_cert: document.getElementById('ca-cert').value,
+                ca_key: document.getElementById('ca-key').value
+            },
+            web_interface: {
+                enable: document.getElementById('enable-web').checked,
+                host: document.getElementById('web-host').value,
+                port: parseInt(document.getElementById('web-port').value)
+            },
+            logging: {
+                level: document.getElementById('log-level').value,
+                file: document.getElementById('log-file').value,
+                max_log_entries: parseInt(document.getElementById('max-log-entries').value)
+            },
+            filters: {
+                ignored_hosts: document.getElementById('ignored-hosts').value.split('\n').filter(h => h.trim()),
+                ignored_extensions: document.getElementById('ignored-extensions').value.split('\n').filter(e => e.trim()),
+                ignored_content_types: document.getElementById('ignored-content-types').value.split('\n').filter(c => c.trim())
+            }
+        };
+        
+        fetch('/api/config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess();
+            } else {
+                showError(data.error || 'Failed to save settings');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving settings:', error);
+            showError('Failed to save settings: ' + error.message);
+        });
+    }
+    
+    function generateCACertificate() {
+        const caName = document.getElementById('ca-name').value;
+        const caDir = document.getElementById('ca-dir').value;
+        
+        const resultElement = document.getElementById('ca-result');
+        const messageElement = document.getElementById('ca-result-message');
+        
+        resultElement.className = 'alert alert-info';
+        resultElement.style.display = 'block';
+        messageElement.textContent = 'Generating CA certificate...';
+        
+        // Make a request to generate the CA certificate
+        fetch(`/api/generate_ca?ca_name=${encodeURIComponent(caName)}&ca_dir=${encodeURIComponent(caDir)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultElement.className = 'alert alert-success';
+                    messageElement.innerHTML = `
+                        CA Certificate generated successfully:<br>
+                        Certificate: ${data.cert_path}<br>
+                        Private Key: ${data.key_path}<br><br>
+                        Important: You need to install this certificate in your browser to intercept HTTPS traffic.
+                    `;
+                    
+                    // Update the CA certificate and key paths in the form
+                    document.getElementById('ca-cert').value = data.cert_path;
+                    document.getElementById('ca-key').value = data.key_path;
+                } else {
+                    resultElement.className = 'alert alert-danger';
+                    messageElement.textContent = data.error || 'Failed to generate CA certificate';
+                }
+            })
+            .catch(error => {
+                console.error('Error generating CA certificate:', error);
+                resultElement.className = 'alert alert-danger';
+                messageElement.textContent = 'Failed to generate CA certificate: ' + error.message;
+            });
+    }
+    
+    function showSuccess() {
+        const alert = document.getElementById('settings-alert');
+        alert.style.display = 'block';
+        
+        // Hide error if visible
+        document.getElementById('settings-error').style.display = 'none';
+        
+        // Auto hide after 3 seconds
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+    
+    function showError(message) {
+        const alert = document.getElementById('settings-error');
+        document.getElementById('error-message').textContent = message;
+        alert.style.display = 'block';
+        
+        // Hide success if visible
+        document.getElementById('settings-alert').style.display = 'none';
+    }
+</script>
+{% endblock %}

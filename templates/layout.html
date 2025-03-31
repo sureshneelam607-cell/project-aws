@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NaptProxy - {% block title %}Vulnerability Scanner Traffic Proxy{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    
+    <!-- Feather Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/custom.css">
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="d-flex justify-content-center align-items-center mb-4">
+                        <h4 class="text-info">NaptProxy</h4>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                                <i data-feather="home"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/logs' %}active{% endif %}" href="/logs">
+                                <i data-feather="file-text"></i>
+                                Traffic Logs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/settings' %}active{% endif %}" href="/settings">
+                                <i data-feather="settings"></i>
+                                Settings
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <div class="px-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Proxy Status</span>
+                            <span id="proxy-status-indicator" class="badge bg-success">Running</span>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="proxy-address">0.0.0.0:8000</small>
+                        </div>
+                    </div>
+                    
+                    <div class="px-3">
+                        <h6 class="text-muted">Traffic Statistics</h6>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Requests</span>
+                            <span id="total-requests">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Data In</span>
+                            <span id="total-bytes-in">0 B</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Data Out</span>
+                            <span id="total-bytes-out">0 B</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>Uptime</span>
+                            <span id="uptime">0s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">{% block header %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        {% block header_buttons %}{% endblock %}
+                    </div>
+                </div>
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Initialize feather icons -->
+    <script>
+        feather.replace();
+        
+        // Update sidebar stats periodically
+        function updateSidebarStats() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    // Update proxy status
+                    const statusIndicator = document.getElementById('proxy-status-indicator');
+                    if (data.running) {
+                        statusIndicator.className = 'badge bg-success';
+                        statusIndicator.textContent = 'Running';
+                    } else {
+                        statusIndicator.className = 'badge bg-danger';
+                        statusIndicator.textContent = 'Stopped';
+                    }
+                    
+                    // Update proxy address
+                    document.getElementById('proxy-address').textContent = `${data.host}:${data.port}`;
+                    
+                    // Update traffic stats
+                    if (data.traffic_stats) {
+                        document.getElementById('total-requests').textContent = data.traffic_stats.total_requests;
+                        document.getElementById('total-bytes-in').textContent = formatBytes(data.traffic_stats.total_bytes_in);
+                        document.getElementById('total-bytes-out').textContent = formatBytes(data.traffic_stats.total_bytes_out);
+                        document.getElementById('uptime').textContent = formatDuration(data.traffic_stats.uptime);
+                    }
+                })
+                .catch(error => console.error('Error fetching proxy status:', error));
+        }
+        
+        // Format bytes to human-readable form
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            
+            return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + units[i];
+        }
+        
+        // Format duration in seconds to human-readable form
+        function formatDuration(seconds) {
+            const d = Math.floor(seconds / (3600 * 24));
+            const h = Math.floor((seconds % (3600 * 24)) / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            
+            if (d > 0) {
+                return `${d}d ${h}h ${m}m ${s}s`;
+            } else if (h > 0) {
+                return `${h}h ${m}m ${s}s`;
+            } else if (m > 0) {
+                return `${m}m ${s}s`;
+            } else {
+                return `${s}s`;
+            }
+        }
+        
+        // Initial update
+        updateSidebarStats();
+        
+        // Update every 5 seconds
+        setInterval(updateSidebarStats, 5000);
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

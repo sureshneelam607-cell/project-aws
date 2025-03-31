@@ -1,0 +1,247 @@
+/**
+ * Custom CSS for NaptProxy
+ * These styles supplement the Bootstrap dark theme
+ */
+
+/* General styling tweaks */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #121212;
+    color: #f8f9fa;
+}
+
+/* Sidebar styling */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    background-color: #1e1e1e;
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #adb5bd;
+    padding: 0.75rem 1rem;
+    border-left: 3px solid transparent;
+}
+
+.sidebar .nav-link.active {
+    color: #6cc3d5;
+    border-left: 3px solid #17a2b8;
+    background-color: rgba(23, 162, 184, 0.1);
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+}
+
+.sidebar .nav-link .feather {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+}
+
+/* Card styling */
+.card {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Table styling refinements */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.075);
+}
+
+/* Button and badge styling */
+.btn-outline-info, .btn-outline-secondary {
+    border-color: #17a2b8;
+    color: #17a2b8;
+}
+
+.btn-outline-info:hover, .btn-outline-secondary:hover {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Pre and code block styling */
+pre {
+    background-color: #2a2a2a;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    color: #f8f9fa;
+    overflow-x: auto;
+}
+
+/* Form control customizations */
+.form-control, .form-select {
+    background-color: #2a2a2a;
+    border-color: #444;
+    color: #f8f9fa;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #2a2a2a;
+    border-color: #17a2b8;
+    color: #f8f9fa;
+    box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.25);
+}
+
+.form-text {
+    color: #adb5bd;
+}
+
+/* Tab styling */
+.nav-tabs {
+    border-bottom: 1px solid #444;
+}
+
+.nav-tabs .nav-link {
+    color: #adb5bd;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    padding: 0.5rem 1rem;
+}
+
+.nav-tabs .nav-link.active {
+    color: #17a2b8;
+    background-color: transparent;
+    border-bottom: 2px solid #17a2b8;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: #f8f9fa;
+}
+
+/* Modal styling */
+.modal-content {
+    border: none;
+    border-radius: 0.3rem;
+}
+
+.modal-header, .modal-footer {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom alert styling */
+.alert {
+    border: none;
+    border-radius: 0.3rem;
+}
+
+/* Chart containers */
+.chart-container {
+    position: relative;
+    margin: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: static;
+        height: auto;
+        padding-bottom: 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    main {
+        padding-top: 1.5rem;
+    }
+}
+
+/* Truncate long text with ellipsis */
+.text-truncate {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
+/* Feather icon alignment */
+.feather {
+    vertical-align: text-bottom;
+}
+
+/* Pagination styling */
+.pagination .page-link {
+    background-color: #2a2a2a;
+    border-color: #444;
+    color: #f8f9fa;
+}
+
+.pagination .page-link:hover {
+    background-color: #444;
+    border-color: #666;
+    color: #fff;
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: #222;
+    border-color: #333;
+    color: #666;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+/* Switch styling */
+.form-switch .form-check-input:checked {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+/* Vulnerability badges/indicators */
+.border-danger {
+    border-color: #dc3545 !important;
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2a2a2a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}

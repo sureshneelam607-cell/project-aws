@@ -1,0 +1,41 @@
+{
+    "proxy": {
+        "host": "0.0.0.0",
+        "port": 8000,
+        "buffer_size": 8192,
+        "timeout": 60,
+        "max_connections": 100
+    },
+    "web_interface": {
+        "host": "0.0.0.0",
+        "port": 5000,
+        "enable": true
+    },
+    "ssl": {
+        "intercept": false,
+        "ca_cert": "ca/ca.crt",
+        "ca_key": "ca/ca.key"
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "naptyproxy.log",
+        "max_log_entries": 1000
+    },
+    "filters": {
+        "ignored_hosts": [],
+        "ignored_extensions": [
+            ".css",
+            ".js",
+            ".jpg",
+            ".png",
+            ".gif",
+            ".ico",
+            ".svg"
+        ],
+        "ignored_content_types": [
+            "image/",
+            "font/",
+            "application/javascript"
+        ]
+    }
+}
